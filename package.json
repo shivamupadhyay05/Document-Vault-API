@@ -13,7 +13,9 @@
     "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
-    "@prisma/client": "6.4.0"
+    "@prisma/client": "6.4.0",
+    "graphql": "^17.0.2",
+    "graphql-yoga": "^5.22.0"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",
