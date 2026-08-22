@@ -1,5 +1,7 @@
-import { Collection, Document } from "@prisma/client";
+import { Collection, Document, Prisma } from "@prisma/client";
+import { GraphQLError } from "graphql";
 import { GraphQLContext } from "./context";
+import { validateCollectionInput } from "../utils/validation";
 
 export const resolvers = {
   Query: {
@@ -20,8 +22,29 @@ export const resolvers = {
     },
   },
   Mutation: {
-    createCollection: () => {
-      throw new Error("Not implemented");
+    createCollection: async (
+      _: unknown,
+      { input }: { input: { name: string; slug: string } },
+      ctx: GraphQLContext
+    ) => {
+      validateCollectionInput(input.name, input.slug);
+
+      try {
+        return await ctx.prisma.collection.create({
+          data: {
+            name: input.name.trim(),
+            slug: input.slug.trim(),
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new GraphQLError("A collection with this slug already exists.");
+        }
+        throw error;
+      }
     },
     createDocument: () => {
       throw new Error("Not implemented");
