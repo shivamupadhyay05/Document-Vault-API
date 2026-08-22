@@ -16,3 +16,13 @@ export function validateCollectionInput(name: string, slug: string): void {
     );
   }
 }
+
+export function validateDocumentInput(title: string, content: string): void {
+  if (!title || title.trim().length === 0) {
+    throw new GraphQLError("Document title cannot be empty");
+  }
+
+  if (!content || content.trim().length === 0) {
+    throw new GraphQLError("Document content cannot be empty");
+  }
+}

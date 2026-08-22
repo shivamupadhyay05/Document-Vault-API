@@ -1,7 +1,10 @@
 import { Collection, Document, Prisma } from "@prisma/client";
 import { GraphQLError } from "graphql";
 import { GraphQLContext } from "./context";
-import { validateCollectionInput } from "../utils/validation";
+import {
+  validateCollectionInput,
+  validateDocumentInput,
+} from "../utils/validation";
 
 export const resolvers = {
   Query: {
@@ -46,8 +49,38 @@ export const resolvers = {
         throw error;
       }
     },
-    createDocument: () => {
-      throw new Error("Not implemented");
+    createDocument: async (
+      _: unknown,
+      {
+        input,
+      }: {
+        input: {
+          title: string;
+          content: string;
+          tags?: string[];
+          collectionId: string;
+        };
+      },
+      ctx: GraphQLContext
+    ) => {
+      validateDocumentInput(input.title, input.content);
+
+      const collection = await ctx.prisma.collection.findUnique({
+        where: { id: input.collectionId },
+      });
+
+      if (!collection) {
+        throw new GraphQLError("Collection not found");
+      }
+
+      return ctx.prisma.document.create({
+        data: {
+          title: input.title.trim(),
+          content: input.content.trim(),
+          tags: input.tags ?? [],
+          collectionId: input.collectionId,
+        },
+      });
     },
     updateDocument: () => {
       throw new Error("Not implemented");
