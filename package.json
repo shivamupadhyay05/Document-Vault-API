@@ -7,10 +7,17 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun run src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gendb": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@prisma/client": "6.4.0"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",
+    "prisma": "6.4.0",
     "typescript": "^5.7.0"
   }
 }
