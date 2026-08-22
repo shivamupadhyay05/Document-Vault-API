@@ -129,8 +129,24 @@ export const resolvers = {
         data: updateData,
       });
     },
-    deleteDocument: () => {
-      throw new Error("Not implemented");
+    deleteDocument: async (
+      _: unknown,
+      { id }: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      const existingDoc = await ctx.prisma.document.findUnique({
+        where: { id },
+      });
+
+      if (!existingDoc) {
+        throw new GraphQLError("Document not found");
+      }
+
+      await ctx.prisma.document.delete({
+        where: { id },
+      });
+
+      return true;
     },
     moveDocument: () => {
       throw new Error("Not implemented");
