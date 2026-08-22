@@ -26,3 +26,16 @@ export function validateDocumentInput(title: string, content: string): void {
     throw new GraphQLError("Document content cannot be empty");
   }
 }
+
+export function validateUpdateDocumentInput(
+  title?: string,
+  content?: string
+): void {
+  if (title !== undefined && (!title || title.trim().length === 0)) {
+    throw new GraphQLError("Document title cannot be empty");
+  }
+
+  if (content !== undefined && (!content || content.trim().length === 0)) {
+    throw new GraphQLError("Document content cannot be empty");
+  }
+}

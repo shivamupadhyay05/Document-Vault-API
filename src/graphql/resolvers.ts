@@ -4,6 +4,7 @@ import { GraphQLContext } from "./context";
 import {
   validateCollectionInput,
   validateDocumentInput,
+  validateUpdateDocumentInput,
 } from "../utils/validation";
 
 export const resolvers = {
@@ -82,8 +83,51 @@ export const resolvers = {
         },
       });
     },
-    updateDocument: () => {
-      throw new Error("Not implemented");
+    updateDocument: async (
+      _: unknown,
+      {
+        id,
+        input,
+      }: {
+        id: string;
+        input: {
+          title?: string;
+          content?: string;
+          tags?: string[];
+          isArchived?: boolean;
+        };
+      },
+      ctx: GraphQLContext
+    ) => {
+      const existingDoc = await ctx.prisma.document.findUnique({
+        where: { id },
+      });
+
+      if (!existingDoc) {
+        throw new GraphQLError("Document not found");
+      }
+
+      validateUpdateDocumentInput(input.title, input.content);
+
+      const updateData: Prisma.DocumentUpdateInput = {};
+
+      if (input.title !== undefined) {
+        updateData.title = input.title.trim();
+      }
+      if (input.content !== undefined) {
+        updateData.content = input.content.trim();
+      }
+      if (input.tags !== undefined) {
+        updateData.tags = input.tags;
+      }
+      if (input.isArchived !== undefined) {
+        updateData.isArchived = input.isArchived;
+      }
+
+      return ctx.prisma.document.update({
+        where: { id },
+        data: updateData,
+      });
     },
     deleteDocument: () => {
       throw new Error("Not implemented");
