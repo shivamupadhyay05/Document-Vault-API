@@ -21,8 +21,61 @@ export const resolvers = {
         where: { id },
       });
     },
-    documents: () => {
-      throw new Error("Not implemented");
+    documents: async (
+      _: unknown,
+      {
+        collectionId,
+        search,
+        isArchived,
+      }: {
+        collectionId?: string | null;
+        search?: string | null;
+        isArchived?: boolean | null;
+      },
+      ctx: GraphQLContext
+    ) => {
+      const where: Prisma.DocumentWhereInput = {};
+
+      if (collectionId !== undefined && collectionId !== null) {
+        where.collectionId = collectionId;
+      }
+
+      if (isArchived !== undefined && isArchived !== null) {
+        where.isArchived = isArchived;
+      }
+
+      const searchTerm = search?.trim();
+      if (searchTerm && searchTerm.length > 0) {
+        where.OR = [
+          { title: { contains: searchTerm, mode: "insensitive" } },
+          { content: { contains: searchTerm, mode: "insensitive" } },
+        ];
+      }
+
+      const docs = await ctx.prisma.document.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+      });
+
+      const edges = docs.map((doc) => ({
+        node: doc,
+        cursor: doc.id,
+      }));
+
+      const totalCount = docs.length;
+
+      const pageInfo = {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        startCursor: edges.length > 0 ? edges[0].cursor : null,
+        endCursor: edges.length > 0 ? edges[edges.length - 1].cursor : null,
+      };
+
+      return {
+        edges,
+        pageInfo,
+        totalCount,
+      };
     },
   },
   Mutation: {
