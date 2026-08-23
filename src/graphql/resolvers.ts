@@ -6,6 +6,7 @@ import {
   validateDocumentInput,
   validateUpdateDocumentInput,
 } from "../utils/validation";
+import { decodeCursor, encodeCursor } from "../utils/cursor";
 
 export const resolvers = {
   Query: {
@@ -27,13 +28,39 @@ export const resolvers = {
         collectionId,
         search,
         isArchived,
+        first,
+        after,
       }: {
         collectionId?: string | null;
         search?: string | null;
         isArchived?: boolean | null;
+        first?: number | null;
+        after?: string | null;
       },
       ctx: GraphQLContext
     ) => {
+      let limit = 20;
+      if (first !== undefined && first !== null) {
+        if (first <= 0) {
+          throw new GraphQLError("first must be greater than 0");
+        }
+        if (first > 100) {
+          throw new GraphQLError("first cannot be greater than 100");
+        }
+        limit = first;
+      }
+
+      let cursorDocId: string | null = null;
+      if (after !== undefined && after !== null && after.trim().length > 0) {
+        cursorDocId = decodeCursor(after);
+        const cursorDoc = await ctx.prisma.document.findUnique({
+          where: { id: cursorDocId },
+        });
+        if (!cursorDoc) {
+          throw new GraphQLError("Invalid cursor");
+        }
+      }
+
       const where: Prisma.DocumentWhereInput = {};
 
       if (collectionId !== undefined && collectionId !== null) {
@@ -52,20 +79,31 @@ export const resolvers = {
         ];
       }
 
-      const docs = await ctx.prisma.document.findMany({
+      const totalCount = await ctx.prisma.document.count({ where });
+
+      const findOptions: Prisma.DocumentFindManyArgs = {
         where,
-        orderBy: { createdAt: "desc" },
-      });
+        take: limit + 1,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      };
+
+      if (cursorDocId) {
+        findOptions.cursor = { id: cursorDocId };
+        findOptions.skip = 1;
+      }
+
+      const rawDocs = await ctx.prisma.document.findMany(findOptions);
+
+      const hasNextPage = rawDocs.length > limit;
+      const docs = hasNextPage ? rawDocs.slice(0, limit) : rawDocs;
 
       const edges = docs.map((doc) => ({
         node: doc,
-        cursor: doc.id,
+        cursor: encodeCursor(doc.id),
       }));
 
-      const totalCount = docs.length;
-
       const pageInfo = {
-        hasNextPage: false,
+        hasNextPage,
         hasPreviousPage: false,
         startCursor: edges.length > 0 ? edges[0].cursor : null,
         endCursor: edges.length > 0 ? edges[edges.length - 1].cursor : null,
