@@ -148,8 +148,31 @@ export const resolvers = {
 
       return true;
     },
-    moveDocument: () => {
-      throw new Error("Not implemented");
+    moveDocument: async (
+      _: unknown,
+      { id, collectionId }: { id: string; collectionId: string },
+      ctx: GraphQLContext
+    ) => {
+      const existingDoc = await ctx.prisma.document.findUnique({
+        where: { id },
+      });
+
+      if (!existingDoc) {
+        throw new GraphQLError("Document not found");
+      }
+
+      const targetCollection = await ctx.prisma.collection.findUnique({
+        where: { id: collectionId },
+      });
+
+      if (!targetCollection) {
+        throw new GraphQLError("Collection not found");
+      }
+
+      return ctx.prisma.document.update({
+        where: { id },
+        data: { collectionId },
+      });
     },
   },
   Collection: {
