@@ -397,15 +397,3 @@ Future enhancements outside the scope of this assignment could include:
 ## API Limitations & Scope
 
 The current implementation intentionally excludes authentication, RBAC, GraphQL Federation, Redis caching, and cloud deployment in accordance with the assignment parameters.
-
----
-
-## Walkthrough
-
-A 5–10 minute evaluation walkthrough covers:
-
-1. **Architecture & Project Layout**: Project structure, TypeScript strict mode, and Bun environment setup.
-2. **Prisma & Database Setup**: Dockerized PostgreSQL, Prisma schema, and migrations.
-3. **GraphQL API & Resolvers**: Queries, mutations, error handling, and field resolvers.
-4. **Search, Filtering & Pagination**: Case-insensitive search, combined AND filters, base64 cursors, and `totalCount`.
-5. **Testing & Quality Assurance**: Unit test suite using `bun:test` with mocked Prisma context, E2E PostgreSQL integration tests, and typecheck.
